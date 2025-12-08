@@ -1,0 +1,16 @@
+{
+  "name": "pevs-zapr-2025-zadnie2-test",
+  "version": "1.0.0",
+  "description": "Test script for implementation of the assignment",
+  "private": "true",
+  "main": "index.js",
+  "type": "module",
+  "author": "tuplle",
+  "license": "ISC",
+  "scripts": {
+    "test": "npx @microsoft/tui-test"
+  },
+  "devDependencies": {
+    "@microsoft/tui-test": "^0.0.1-rc.5"
+  }
+}
