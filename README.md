@@ -139,8 +139,8 @@ NAZOV|AUTOR|ZANER|START_DATUM|END_DATUM|SCORE|POZNAMKA
 Ak nejaký atribút v rámci záznamu neexistuje je uložený iba prázdny reťazec `""`.
 
 Súbor je uložený v rovnakom priečinku ako je umiestnený spustiteľný program (t.j. skompilovaný spustiteľný súbor
-programu), t.j. relatívna cesta `./` pod názvom `reading_journal.txt`.
-**Súbor aj umiestnenie programu je dôležité dodržať**.
+programu), t.j. relatívna cesta `./`, pod názvom `reading_journal.txt`.
+**Súbor aj jeho umiestnenie je dôležité dodržať**.
 
 **Príklad súboru:**
 
