@@ -394,6 +394,13 @@ JournalEntry *load_entry(char *line) {
         perror("Failed to allocate memory for journal entry");
         return NULL;
     }
+    entry->book_name = NULL;
+    entry->author = NULL;
+    entry->genre = NULL;
+    entry->start_date = NULL;
+    entry->end_date = NULL;
+    entry->score = 0;
+    entry->note = NULL;
 
     int field = 0;
     char *current_line = line;
@@ -578,6 +585,7 @@ void list_entries(bool (*filter)(JournalEntry *, char *), char *filter_argv) {
             print_entry(entry);
             filtered_entries++;
         } else if (filter == NULL) {
+            print_entry(entry);
             filtered_entries++;
         }
         free_entry(entry);

@@ -97,6 +97,8 @@ fabric.properties
 
 # User-specific stuff
 
+reading_journal.txt
+
 # AWS User-specific
 
 # Generated files
