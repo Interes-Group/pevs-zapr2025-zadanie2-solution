@@ -1,11 +1,13 @@
+#define _GNU_SOURCE
+#define JOURNAL_FILE "reading_journal.txt"
+
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
 
-#define JOURNAL_FILE "reading_journal.txt"
-
+int days_in_month[] = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
 
 typedef struct {
     char *book_name;
@@ -44,7 +46,40 @@ void print_help() {
     printf("  ./journal list --genre fantasy\n");
 }
 
-int days_in_month[] = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
+/**
+ * @brief Splits a string into tokens based on specified delimiters.
+ *
+ * This function extracts the next token from the string pointed to by `*stringp`, where tokens are
+ * delimited by any of the characters in the string `delim`. It modifies the input string in-place,
+ * replacing the first delimiter encountered with a null terminator (`'\0'`) and updating `*stringp`
+ * to point to the character following the token. If no more tokens are found, `*stringp` is set to NULL.
+ *
+ * @param stringp A pointer to the string pointer to be tokenized. This parameter must not be NULL.
+ *                The string pointed to by `*stringp` is updated to reflect progress through the string.
+ *                On the first call, `*stringp` should point to the start of the string to tokenize.
+ * @param delim A null-terminated string containing the delimiter characters. The function treats each
+ *              character in `delim` as a possible token delimiter. This parameter must not be NULL.
+ *
+ * @return A pointer to the next token extracted from the string, or NULL if there are no more tokens.
+ *
+ * - If `*stringp` points to NULL when the function is called, NULL is returned.
+ * - The function uses `strcspn` to determine the position of the first delimiter within the input string.
+ * - If a delimiter is found, it is replaced with a null terminator (`'\0`), effectively splitting the string.
+ * - After processing, `*stringp` is updated to point to the next segment of the input string.
+ * - If the end of the string is reached, `*stringp` is set to NULL, indicating there are no more tokens.
+ */
+char *strsep(char **stringp, const char *delim) {
+    char *rv = *stringp;
+    if (rv) {
+        *stringp += strcspn(*stringp, delim);
+        if (**stringp) {
+            *(*stringp)++ = '\0';
+        } else {
+            *stringp = 0;
+        }
+    }
+    return rv;
+}
 
 /**
  * @brief Validates if the given string represents a valid date in the format YYYY-MM-DD.
@@ -81,9 +116,9 @@ bool is_valid_date(const char *date) {
         }
     }
 
-    int year = (int) strtol(date, nullptr, 10);
-    int month = (int) strtol(date + 5, nullptr, 10);
-    int day = (int) strtol(date + 8, nullptr, 10);
+    int year = (int) strtol(date, NULL, 10);
+    int month = (int) strtol(date + 5, NULL, 10);
+    int day = (int) strtol(date + 8, NULL, 10);
 
     if (month < 1 || month > 12) return false;
     if (day < 1) return false;
@@ -111,19 +146,19 @@ bool is_valid_date(const char *date) {
  *             must not be null and should follow the format YYYY-MM-DD.
  *
  * @return A pointer to the original date string if it is valid, otherwise
- *         nullptr.
+ *         NULL.
  *
- * - If the input date is null, the function returns nullptr without attempting validation.
+ * - If the input date is null, the function returns NULL without attempting validation.
  * - The function relies on `is_valid_date` to verify the date's format and
  *   validity. If the date is invalid, an error message is printed, and
- *   the function returns nullptr.
+ *   the function returns NULL.
  * - If the date is valid, the input pointer is returned unchanged.
  */
 char *get_date(char *date) {
-    if (date == NULL) return nullptr;
+    if (date == NULL) return NULL;
     if (!is_valid_date(date)) {
         printf("Invalid date format. Correct format is YYYY-MM-DD (ISO 8601)\n");
-        return nullptr;
+        return NULL;
     }
     return date;
 }
@@ -142,15 +177,15 @@ char *get_date(char *date) {
  * @param option_index The index within `argv` of the target option whose value is to be extracted.
  *
  * @return A pointer to a dynamically allocated string containing the value of the specified option
- * if the value exists and is valid. Returns nullptr if:
+ * if the value exists and is valid. Returns NULL if:
  * - The index `option_index + 1` is out of bounds.
  * - The argument at `option_index + 1` appears to be an option (starts with "--").
  *
  * The caller is responsible for freeing the allocated string when no longer needed.
  */
 char *get_option_value(int argc, char *argv[], int option_index) {
-    if (argc <= option_index + 1) return nullptr;
-    if (argv[option_index + 1][0] == '-' && argv[option_index + 1][1] == '-') return nullptr;
+    if (argc <= option_index + 1) return NULL;
+    if (argv[option_index + 1][0] == '-' && argv[option_index + 1][1] == '-') return NULL;
     char *value = malloc(sizeof(char) * strlen(argv[option_index + 1]));
     strcpy(value, argv[option_index + 1]);
     return value;
@@ -289,8 +324,8 @@ void new_cmd(int argc, char *argv[]) {
             entry->end_date = get_date(get_option_value(argc, argv, i));
         } else if (strcmp(argv[i], "--score") == 0) {
             char *score_value = get_option_value(argc, argv, i);
-            if (score_value == nullptr) continue;
-            entry->score = strtol(score_value, nullptr, 10);
+            if (score_value == NULL) continue;
+            entry->score = strtol(score_value, NULL, 10);
         } else if (strcmp(argv[i], "--note") == 0) {
             entry->note = get_option_value(argc, argv, i);
         }
@@ -330,12 +365,12 @@ void new_cmd(int argc, char *argv[]) {
  * in the input line are expected to follow the order:
  * book_name, author, genre, start_date, end_date, score, note. If any of the required
  * fields (book_name, author, genre, start_date) are missing or invalid, the function fails
- * and returns a nullptr.
+ * and returns a NULL.
  *
  * @param line A null-terminated string containing the delimited line of data. The string
  *             should use the '|' character to separate fields.
  *
- * @return A pointer to a dynamically allocated JournalEntry instance on success, or nullptr
+ * @return A pointer to a dynamically allocated JournalEntry instance on success, or NULL
  *         if allocation fails or the line does not contain the required fields. The caller
  *         is responsible for freeing the returned JournalEntry using free_entry.
  *
@@ -349,7 +384,7 @@ void new_cmd(int argc, char *argv[]) {
  *   - Field 6: Optionally populates the `note` field if provided.
  *
  * - If memory allocation fails for any fields, the function cleans up any
- *   previously allocated memory, logs an error message, and returns nullptr.
+ *   previously allocated memory, logs an error message, and returns NULL.
  * - The function ensures that required fields (`book_name`, `author`, `genre`,
  *   and `start_date`) are not null and contain valid data.
  */
@@ -357,7 +392,7 @@ JournalEntry *load_entry(char *line) {
     JournalEntry *entry = malloc(sizeof(JournalEntry));
     if (entry == NULL) {
         perror("Failed to allocate memory for journal entry");
-        return nullptr;
+        return NULL;
     }
 
     int field = 0;
@@ -388,7 +423,7 @@ JournalEntry *load_entry(char *line) {
                 break;
             case 5:
                 if (strlen(token) == 0) break;
-                entry->score = strtol(token, nullptr, 10);
+                entry->score = strtol(token, NULL, 10);
                 break;
             case 6:
                 if (strlen(token) == 0) break;
@@ -402,7 +437,7 @@ JournalEntry *load_entry(char *line) {
     if (entry->book_name == NULL || entry->author == NULL || entry->genre == NULL || entry->start_date == NULL) {
         printf("Failed to load journal entry from line: %s", line);
         free_entry(entry);
-        return nullptr;
+        return NULL;
     }
     return entry;
 }
@@ -449,7 +484,7 @@ bool filter_by_genre(JournalEntry *entry, char *genre) {
  */
 bool filter_by_score(JournalEntry *entry, char *score) {
     if (entry == NULL || score == NULL) return false;
-    int score_int = strtol(score, nullptr, 10);
+    unsigned int score_int = strtol(score, NULL, 10);
     return entry->score >= score_int;
 }
 
@@ -504,8 +539,8 @@ bool filter_if_completed(JournalEntry *entry, char *ignored) {
  *
  * @param filter A pointer to a filtering function that takes a `JournalEntry` and a filter argument,
  *               and returns `true` if the entry satisfies the filter criteria, or `false` otherwise.
- *               If `filter` is `nullptr`, no filtering is applied, and all entries are listed.
- * @param filter_argv A filter-specific argument to pass to the filter function. This can be `nullptr`
+ *               If `filter` is `NULL`, no filtering is applied, and all entries are listed.
+ * @param filter_argv A filter-specific argument to pass to the filter function. This can be `NULL`
  *                    if the filter does not require additional arguments or if no filter is provided.
  *
  * @note The journal entries are expected to be stored in a file defined by the `JOURNAL_FILE` macro.
@@ -529,12 +564,12 @@ void list_entries(bool (*filter)(JournalEntry *, char *), char *filter_argv) {
         return;
     }
     printf("Reading journal:\n");
-    char *line = nullptr;
+    char *line = NULL;
     size_t len = 0;
-    ssize_t read;
+    size_t read;
     int total_entries = 0;
     int filtered_entries = 0;
-    while ((read = getline(&line, &len, file)) != -1) {
+    while ((read = getline(&line, &len, file)) != (size_t) -1) {
         line[strcspn(line, "\n")] = '\0';
         JournalEntry *entry = load_entry(line);
         if (entry == NULL) continue;
@@ -595,9 +630,9 @@ void list_cmd(int argc, char *argv[]) {
         if (strcmp(argv[2], "--genre") == 0) {
             list_entries(filter_by_genre, argv[3]);
         } else if (strcmp(argv[2], "--reading") == 0) {
-            list_entries(filter_if_reading, nullptr);
+            list_entries(filter_if_reading, NULL);
         } else if (strcmp(argv[2], "--completed") == 0) {
-            list_entries(filter_if_completed, nullptr);
+            list_entries(filter_if_completed, NULL);
         } else if (strcmp(argv[2], "--score") == 0) {
             list_entries(filter_by_score, argv[3]);
         } else {
@@ -605,7 +640,7 @@ void list_cmd(int argc, char *argv[]) {
             print_help();
         }
     } else {
-        list_entries(nullptr, nullptr);
+        list_entries(NULL, NULL);
     }
 }
 
